@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Globalization;
 using NuGet.Resources;
 
@@ -13,6 +14,8 @@ namespace NuGet
     /// </summary>
     public sealed class SemanticVersion : IComparable, IComparable<SemanticVersion>, IEquatable<SemanticVersion>
     {
+        private static readonly ConcurrentDictionary<string, SemanticVersion> _cache = new ConcurrentDictionary<string, SemanticVersion>();
+
         public SemanticVersion(string version)
             : this(Parse(version))
         {
@@ -176,6 +179,11 @@ namespace NuGet
             version = version.Trim();
             var versionPart = version;
 
+            if (_cache.TryGetValue(version, out semVer))
+            {
+                return true;
+            }
+
             string specialVersion = string.Empty;
             if (version.IndexOf('-') != -1)
             {
@@ -208,6 +216,9 @@ namespace NuGet
             }
 
             semVer = new SemanticVersion(NormalizeVersionValue(versionValue), specialVersion, version.Replace(" ", ""));
+
+            _cache.TryAdd(version, semVer);
+
             return true;
         }
 

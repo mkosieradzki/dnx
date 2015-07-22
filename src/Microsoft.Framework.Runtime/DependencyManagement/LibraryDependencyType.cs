@@ -1,38 +1,35 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Microsoft.Framework.Runtime
 {
     public class LibraryDependencyType
     {
-        private readonly LibraryDependencyTypeFlag[] _keywords;
+        private readonly LibraryDependencyTypeFlag _keywords;
 
         public static LibraryDependencyType Default;
 
         static LibraryDependencyType()
         {
-            Default = Parse(new[] { "default" });
+            Default = new LibraryDependencyType(LibraryDependencyTypeKeyword.Default.FlagsToAdd);
         }
 
         public LibraryDependencyType()
         {
-            _keywords = new LibraryDependencyTypeFlag[0];
+            _keywords = LibraryDependencyTypeFlag.None;
         }
 
-        private LibraryDependencyType(LibraryDependencyTypeFlag[] flags)
+        private LibraryDependencyType(LibraryDependencyTypeFlag flags)
         {
             _keywords = flags;
         }
 
         public bool Contains(LibraryDependencyTypeFlag flag)
         {
-            return _keywords.Contains(flag);
+            return (_keywords & flag) == flag;
         }
 
         public static LibraryDependencyType Parse(IEnumerable<string> keywords)
@@ -46,16 +43,19 @@ namespace Microsoft.Framework.Runtime
         }
 
         public LibraryDependencyType Combine(
-            IEnumerable<LibraryDependencyTypeFlag> add,
-            IEnumerable<LibraryDependencyTypeFlag> remove)
+            LibraryDependencyTypeFlag add,
+            LibraryDependencyTypeFlag remove)
         {
-            return new LibraryDependencyType(
-                _keywords.Except(remove).Union(add).ToArray());
+            var kw = _keywords;
+            kw |= add;
+            kw &= ~remove;
+
+            return new LibraryDependencyType(kw);
         }
 
         public override string ToString()
         {
-            return string.Join(",", _keywords.Select(kw => kw.ToString()));
+            return _keywords.ToString();
         }
     }
 }

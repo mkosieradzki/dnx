@@ -247,10 +247,14 @@ namespace Microsoft.Framework.Runtime
             project.Dependencies = new List<LibraryDependency>();
 
             // Project files
-            project.Files = new ProjectFilesCollection(rawProject,
-                                                       project.ProjectDirectory,
-                                                       project.ProjectFilePath,
-                                                       diagnostics);
+            if (diagnostics == null)
+            {
+                project.Files = ProjectFilesCollection.Create(rawProject, project.ProjectDirectory, project.ProjectFilePath);
+            }
+            else
+            {
+                project.Files = ProjectFilesCollection.Create(rawProject, project.ProjectDirectory, project.ProjectFilePath, diagnostics);
+            }
 
             var compilerInfo = rawProject.ValueAsJsonObject("compiler");
             if (compilerInfo != null)
@@ -308,7 +312,7 @@ namespace Microsoft.Framework.Runtime
                 project.Repository = repository
                     .Keys
                     .ToDictionary(
-                        key => key, 
+                        key => key,
                         key => repository.ValueAsString(key).Value);
             }
 

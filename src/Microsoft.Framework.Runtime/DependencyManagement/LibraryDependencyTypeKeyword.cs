@@ -2,110 +2,103 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace Microsoft.Framework.Runtime
 {
     public class LibraryDependencyTypeKeyword
     {
-        private static ConcurrentDictionary<string, LibraryDependencyTypeKeyword> _keywords = new ConcurrentDictionary<string, LibraryDependencyTypeKeyword>();
+        private static readonly List<LibraryDependencyTypeKeyword> _rareKeywords = new List<LibraryDependencyTypeKeyword>(16);
 
-        public static LibraryDependencyTypeKeyword Default;
-        public static LibraryDependencyTypeKeyword Build;
-        public static LibraryDependencyTypeKeyword Preprocess;
-        public static LibraryDependencyTypeKeyword Private;
-        public static LibraryDependencyTypeKeyword Dev;
+        public static readonly LibraryDependencyTypeKeyword Default = new LibraryDependencyTypeKeyword(
+                "default",
+                flagsToAdd: LibraryDependencyTypeFlag.MainReference |
+                            LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.MainExport |
+                            LibraryDependencyTypeFlag.RuntimeComponent |
+                            LibraryDependencyTypeFlag.BecomesNupkgDependency,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
+
+        public static readonly LibraryDependencyTypeKeyword Private = new LibraryDependencyTypeKeyword(
+                "private",
+                flagsToAdd: LibraryDependencyTypeFlag.MainReference |
+                            LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.RuntimeComponent |
+                            LibraryDependencyTypeFlag.BecomesNupkgDependency,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
+
+        public static readonly LibraryDependencyTypeKeyword Dev = new LibraryDependencyTypeKeyword(
+                "dev",
+                flagsToAdd: LibraryDependencyTypeFlag.DevComponent,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
+
+        public static readonly LibraryDependencyTypeKeyword Build = new LibraryDependencyTypeKeyword(
+                "build",
+                flagsToAdd: LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.PreprocessComponent,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
+
+        public static readonly LibraryDependencyTypeKeyword Preprocess = new LibraryDependencyTypeKeyword(
+                "preprocess",
+                flagsToAdd: LibraryDependencyTypeFlag.PreprocessReference,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
+
 
         private readonly string _value;
-        private readonly IEnumerable<LibraryDependencyTypeFlag> _flagsToAdd;
-        private readonly IEnumerable<LibraryDependencyTypeFlag> _flagsToRemove;
+        private readonly LibraryDependencyTypeFlag _flagsToAdd;
+        private readonly LibraryDependencyTypeFlag _flagsToRemove;
 
-        public IEnumerable<LibraryDependencyTypeFlag> FlagsToAdd
+        public LibraryDependencyTypeFlag FlagsToAdd
         {
             get { return _flagsToAdd; }
         }
 
-        public IEnumerable<LibraryDependencyTypeFlag> FlagsToRemove
+        public LibraryDependencyTypeFlag FlagsToRemove
         {
             get { return _flagsToRemove; }
         }
 
+        private const int DefaultKeywordLength = 5;
+
         static LibraryDependencyTypeKeyword()
         {
-            var emptyFlags = Enumerable.Empty<LibraryDependencyTypeFlag>();
-
-            Default = Declare(
+            Default = new LibraryDependencyTypeKeyword(
                 "default",
-                flagsToAdd: new[]
-                {
-                    LibraryDependencyTypeFlag.MainReference,
-                    LibraryDependencyTypeFlag.MainSource,
-                    LibraryDependencyTypeFlag.MainExport,
-                    LibraryDependencyTypeFlag.RuntimeComponent,
-                    LibraryDependencyTypeFlag.BecomesNupkgDependency,
-                },
-                flagsToRemove: emptyFlags);
+                flagsToAdd: LibraryDependencyTypeFlag.MainReference |
+                            LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.MainExport |
+                            LibraryDependencyTypeFlag.RuntimeComponent |
+                            LibraryDependencyTypeFlag.BecomesNupkgDependency,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
 
-            Private = Declare(
+            Private = new LibraryDependencyTypeKeyword(
                 "private",
-                flagsToAdd: new[]
-                {
-                    LibraryDependencyTypeFlag.MainReference,
-                    LibraryDependencyTypeFlag.MainSource,
-                    LibraryDependencyTypeFlag.RuntimeComponent,
-                    LibraryDependencyTypeFlag.BecomesNupkgDependency,
-                },
-                flagsToRemove: emptyFlags);
+                flagsToAdd: LibraryDependencyTypeFlag.MainReference |
+                            LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.RuntimeComponent |
+                            LibraryDependencyTypeFlag.BecomesNupkgDependency,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
 
-            Dev = Declare(
+            Dev = new LibraryDependencyTypeKeyword(
                 "dev",
-                flagsToAdd: new[]
-                {
-                    LibraryDependencyTypeFlag.DevComponent,
-                },
-                flagsToRemove: emptyFlags);
+                flagsToAdd: LibraryDependencyTypeFlag.DevComponent,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
 
-            Build = Declare(
+            Build = new LibraryDependencyTypeKeyword(
                 "build",
-                flagsToAdd: new[]
-                {
-                    LibraryDependencyTypeFlag.MainSource,
-                    LibraryDependencyTypeFlag.PreprocessComponent,
-                },
-                flagsToRemove: emptyFlags);
+                flagsToAdd: LibraryDependencyTypeFlag.MainSource |
+                            LibraryDependencyTypeFlag.PreprocessComponent,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
 
-            Preprocess = Declare(
-                "preprocess",
-                flagsToAdd: new[]
-                {
-                    LibraryDependencyTypeFlag.PreprocessReference,
-                },
-                flagsToRemove: emptyFlags);
-
-            foreach (var fieldInfo in typeof(LibraryDependencyTypeFlag).GetTypeInfo().DeclaredFields)
-            {
-                if (fieldInfo.FieldType == typeof(LibraryDependencyTypeFlag))
-                {
-                    var flag = (LibraryDependencyTypeFlag)fieldInfo.GetValue(null);
-                    Declare(
-                        fieldInfo.Name,
-                        flagsToAdd: new[] { flag },
-                        flagsToRemove: emptyFlags);
-                    Declare(
-                        fieldInfo.Name + "-off",
-                        flagsToAdd: emptyFlags,
-                        flagsToRemove: new[] { flag });
-                }
-            }
+            Preprocess = new LibraryDependencyTypeKeyword("preprocess",
+                flagsToAdd: LibraryDependencyTypeFlag.PreprocessReference,
+                flagsToRemove: LibraryDependencyTypeFlag.None);
         }
 
         private LibraryDependencyTypeKeyword(
-            string value, 
-            IEnumerable<LibraryDependencyTypeFlag> flagsToAdd, 
-            IEnumerable<LibraryDependencyTypeFlag> flagsToRemove)
+            string value,
+            LibraryDependencyTypeFlag flagsToAdd,
+            LibraryDependencyTypeFlag flagsToRemove)
         {
             _value = value;
             _flagsToAdd = flagsToAdd;
@@ -114,20 +107,74 @@ namespace Microsoft.Framework.Runtime
 
         internal static LibraryDependencyTypeKeyword Declare(
             string keyword,
-            IEnumerable<LibraryDependencyTypeFlag> flagsToAdd,
-            IEnumerable<LibraryDependencyTypeFlag> flagsToRemove)
+            LibraryDependencyTypeFlag flagsToAdd,
+            LibraryDependencyTypeFlag flagsToRemove)
         {
-            return _keywords.GetOrAdd(keyword, _ => new LibraryDependencyTypeKeyword(keyword, flagsToAdd, flagsToRemove));
+            var kw = new LibraryDependencyTypeKeyword(keyword, flagsToAdd, flagsToRemove);
+            _rareKeywords.Add(kw);
+            return kw;
         }
 
         internal static LibraryDependencyTypeKeyword Parse(string keyword)
         {
-            LibraryDependencyTypeKeyword value;
-            if (_keywords.TryGetValue(keyword, out value))
+            switch (keyword)
             {
-                return value;
+                case "default":
+                    return Default;
+                case "private":
+                    return Private;
+                case "dev":
+                    return Dev;
+                case "build":
+                    return Build;
+                case "preprocess":
+                    return Preprocess;
+                default:
+                    break;
             }
+
+            PopulateRareKeywords();
+
+            foreach (var kw in _rareKeywords)
+            {
+                if (kw._value == keyword)
+                {
+                    return kw;
+                }
+            }
+
             throw new Exception(string.Format("TODO: unknown keyword {0}", keyword));
+        }
+
+        private static void PopulateRareKeywords()
+        {
+            lock (_rareKeywords)
+            {
+                if (_rareKeywords.Count == 0)
+                {
+                    DeclareOnOff("MainReference", LibraryDependencyTypeFlag.MainReference, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("MainSource", LibraryDependencyTypeFlag.MainSource, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("MainExport", LibraryDependencyTypeFlag.MainExport, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("PreprocessReference", LibraryDependencyTypeFlag.PreprocessReference, LibraryDependencyTypeFlag.None);
+
+                    DeclareOnOff("RuntimeComponent", LibraryDependencyTypeFlag.RuntimeComponent, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("DevComponent", LibraryDependencyTypeFlag.DevComponent, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("PreprocessComponent", LibraryDependencyTypeFlag.PreprocessComponent, LibraryDependencyTypeFlag.None);
+                    DeclareOnOff("BecomesNupkgDependency", LibraryDependencyTypeFlag.BecomesNupkgDependency, LibraryDependencyTypeFlag.None);
+                }
+            }
+        }
+
+        private static void DeclareOnOff(string name, LibraryDependencyTypeFlag flag, LibraryDependencyTypeFlag emptyFlags)
+        {
+            Declare(name,
+                flagsToAdd: flag,
+                flagsToRemove: emptyFlags);
+
+            Declare(
+                name + "-off",
+                flagsToAdd: emptyFlags,
+                flagsToRemove: flag);
         }
     }
 }

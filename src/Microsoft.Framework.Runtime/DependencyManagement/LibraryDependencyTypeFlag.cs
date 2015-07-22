@@ -9,45 +9,17 @@ using System.Reflection;
 
 namespace Microsoft.Framework.Runtime
 {
-    public class LibraryDependencyTypeFlag
+    [Flags]
+    public enum LibraryDependencyTypeFlag
     {
-        private static ConcurrentDictionary<string, LibraryDependencyTypeFlag> _flags = new ConcurrentDictionary<string, LibraryDependencyTypeFlag>();
-        private readonly string _value;
-
-        public static LibraryDependencyTypeFlag MainReference;
-        public static LibraryDependencyTypeFlag MainSource;
-        public static LibraryDependencyTypeFlag MainExport;
-        public static LibraryDependencyTypeFlag PreprocessReference;
-
-        public static LibraryDependencyTypeFlag RuntimeComponent;
-        public static LibraryDependencyTypeFlag DevComponent;
-        public static LibraryDependencyTypeFlag PreprocessComponent;
-        public static LibraryDependencyTypeFlag BecomesNupkgDependency;
-
-        static LibraryDependencyTypeFlag()
-        {
-            foreach (var fieldInfo in typeof(LibraryDependencyTypeFlag).GetTypeInfo().DeclaredFields)
-            {
-                if (fieldInfo.FieldType == typeof(LibraryDependencyTypeFlag))
-                {
-                    fieldInfo.SetValue(null, Declare(fieldInfo.Name));
-                }
-            }
-        }
-
-        LibraryDependencyTypeFlag(string value)
-        {
-            _value = value;
-        }
-
-        public static LibraryDependencyTypeFlag Declare(string keyword)
-        {
-            return _flags.GetOrAdd(keyword, x => new LibraryDependencyTypeFlag(x));
-        }
-
-        public override string ToString()
-        {
-            return _value;
-        }
+        None = 0,
+        MainReference = 1,
+        MainSource = 1 << 2,
+        MainExport = 1 << 3,
+        PreprocessReference = 1 << 4,
+        RuntimeComponent = 1 << 5,
+        DevComponent = 1 << 6,
+        PreprocessComponent = 1 << 7,
+        BecomesNupkgDependency = 1 << 8
     }
 }

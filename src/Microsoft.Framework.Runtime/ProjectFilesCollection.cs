@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Framework.Runtime.Json;
@@ -30,10 +31,10 @@ namespace Microsoft.Framework.Runtime
 
         private readonly IEnumerable<string> _publishExcludePatterns;
 
-        internal ProjectFilesCollection(JsonObject rawProject,
-                                        string projectDirectory,
-                                        string projectFilePath,
-                                        ICollection<ICompilationMessage> warnings = null)
+        private ProjectFilesCollection(JsonObject rawProject,
+                                       string projectDirectory,
+                                       string projectFilePath,
+                                       ICollection<ICompilationMessage> warnings = null)
         {
             _projectDirectory = projectDirectory;
             _projectFilePath = projectFilePath;
@@ -85,6 +86,16 @@ namespace Microsoft.Framework.Runtime
                 .ExcludeGroup(_resourcePatternsGroup);
 
             _namedResources = NamedResourceReader.ReadNamedResources(rawProject, projectFilePath);
+        }
+
+        internal static IProjectFilesCollection Create(JsonObject rawProject, string projectDirectory, string projectFilePath)
+        {
+            return new LazyProjectFilesCollection(() => new ProjectFilesCollection(rawProject, projectDirectory, projectFilePath));
+        }
+
+        internal static IProjectFilesCollection Create(JsonObject rawProject, string projectDirectory, string projectFilePath, ICollection<ICompilationMessage> warnings)
+        {
+            return new ProjectFilesCollection(rawProject, projectDirectory, projectFilePath, warnings);
         }
 
         public IEnumerable<string> SourceFiles
@@ -142,5 +153,60 @@ namespace Microsoft.Framework.Runtime
         internal PatternGroup PreprocessPatternsGroup { get { return _preprocessPatternsGroup; } }
 
         internal PatternGroup ContentPatternsGroup { get { return _contentPatternsGroup; } }
+
+        private class LazyProjectFilesCollection : IProjectFilesCollection
+        {
+            private readonly Lazy<IProjectFilesCollection> _files;
+
+            public LazyProjectFilesCollection(Func<IProjectFilesCollection> factory)
+            {
+                _files = new Lazy<IProjectFilesCollection>(factory);
+            }
+
+            private IProjectFilesCollection Files
+            {
+                get
+                {
+                    return _files.Value;
+                }
+            }
+
+            public IEnumerable<string> PreprocessSourceFiles
+            {
+                get
+                {
+                    return Files.PreprocessSourceFiles;
+                }
+            }
+
+            public IDictionary<string, string> ResourceFiles
+            {
+                get
+                {
+                    return Files.ResourceFiles;
+                }
+            }
+
+            public IEnumerable<string> SharedFiles
+            {
+                get
+                {
+                    return Files.SharedFiles;
+                }
+            }
+
+            public IEnumerable<string> SourceFiles
+            {
+                get
+                {
+                    return Files.SourceFiles;
+                }
+            }
+
+            public IEnumerable<string> GetFilesForBundling(bool includeSource, IEnumerable<string> additionalExcludePatterns)
+            {
+                return Files.GetFilesForBundling(includeSource, additionalExcludePatterns);
+            }
+        }
     }
 }
