@@ -112,10 +112,8 @@ namespace Microsoft.Dnx.Runtime
             });
 
             // TODO(anurse): #2226 - Split LibraryManager implementation
-            var libraryManager = new LibraryManager(targetFramework, configuration, DependencyWalker,
-                LibraryExportProvider, cache);
-            LibraryManager = libraryManager;
-            LibraryExporter = libraryManager;
+            LibraryManager = new LibraryManager(DependencyWalker);
+            LibraryExporter = new LibraryExporter(targetFramework, configuration, LibraryManager, LibraryExportProvider, cache);
 
             AssemblyLoadContextFactory = loadContextFactory ?? new RuntimeLoadContextFactory(ServiceProvider);
             namedCacheDependencyProvider = namedCacheDependencyProvider ?? NamedCacheDependencyProvider.Empty;

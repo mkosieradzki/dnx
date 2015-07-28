@@ -58,11 +58,7 @@ namespace Microsoft.Dnx.Runtime.Tests
                 new Library("Config", Enumerable.Empty<String>()),
                 new Library("MyApp", new[] { "DI", "Hosting", "Mvc", "HttpAbstractions" })
             };
-            return new LibraryManager(frameworkName,
-                                      "Debug",
-                                      () => libraryInfo,
-                                      new CompositeLibraryExportProvider(Enumerable.Empty<ILibraryExportProvider>()),
-                                      new EmptyCache());
+            return new LibraryManager(() => libraryInfo);
         }
 
         private class EmptyCache : ICache
