@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.Versioning;
+using Microsoft.Dnx.Compilation;
+using Microsoft.Dnx.Runtime.Caching;
 
-namespace Microsoft.Framework.Runtime.Compilation
+namespace Microsoft.Dnx.Runtime
 {
     public class LibraryExporter : ILibraryExporter
     {
