@@ -11,6 +11,8 @@ namespace Microsoft.Dnx.Runtime
 {
     public class LibraryDescription
     {
+        private Dictionary<string, object> _properties = new Dictionary<string, object>();
+        
         public LibraryRange LibraryRange { get; set; }
         public LibraryIdentity Identity { get; set; }
         public IEnumerable<LibraryDependency> Dependencies { get; set; }
@@ -22,6 +24,17 @@ namespace Microsoft.Dnx.Runtime
         public string Type { get; set; }
         public FrameworkName Framework { get; set; }
         public IEnumerable<string> LoadableAssemblies { get; set; }
+
+        /// <summary>
+        /// Gets or sets a property in the Library's property bag.
+        /// </summary>
+        /// <param name="name">The name of the property to set</param>
+        /// <returns>The value of the property</returns>
+        public object this[string name]
+        {
+            get { return _properties[name]; }
+            set { _properties[name] = value; }
+        }
 
         public Library ToLibrary()
         {
