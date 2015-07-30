@@ -10,7 +10,7 @@ namespace Microsoft.Dnx.Runtime
     /// <summary>
     /// Exposes information about a library which can be an assembly, project, or a package.
     /// </summary>
-    public sealed class Library
+    public class Library
     {
         /// <summary>
         /// Gets the name of the library.
