@@ -57,7 +57,7 @@ namespace Microsoft.Dnx.Runtime
             return Enumerable.Empty<Library>();
         }
 
-        public Library GetLibraryInformation(string name)
+        public Library GetLibrary(string name)
         {
             Library information;
             if (LibraryLookup.TryGetValue(name, out information))
