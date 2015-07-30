@@ -12,7 +12,7 @@ namespace Microsoft.Dnx.Runtime
     public static class ProjectExportProviderHelper
     {
         public static LibraryExport GetExportsRecursive(
-            ILibraryManager manager,
+            LibraryManager manager,
             ILibraryExportProvider libraryExportProvider,
             CompilationTarget target,
             bool dependenciesOnly)
@@ -29,7 +29,7 @@ namespace Microsoft.Dnx.Runtime
         }
 
         public static LibraryExport GetExportsRecursive(
-            ILibraryManager manager,
+            LibraryManager manager,
             ILibraryExportProvider libraryExportProvider,
             CompilationTarget target,
             Func<Library, bool> include)

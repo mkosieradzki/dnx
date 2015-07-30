@@ -7,7 +7,7 @@ namespace Microsoft.Dnx.Runtime
 {
     public class LibraryExporter : ILibraryExporter
     {
-        private readonly ILibraryManager _libraryManager;
+        private readonly LibraryManager _libraryManager;
         private readonly FrameworkName _targetFramework;
         private readonly string _configuration;
         private readonly ILibraryExportProvider _libraryExportProvider;
@@ -15,7 +15,7 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryExporter(FrameworkName targetFramework,
                                string configuration,
-                               ILibraryManager libraryManager,
+                               LibraryManager libraryManager,
                                ILibraryExportProvider libraryExportProvider,
                                ICache cache)
         {

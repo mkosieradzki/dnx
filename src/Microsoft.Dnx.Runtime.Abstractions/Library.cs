@@ -12,8 +12,6 @@ namespace Microsoft.Dnx.Runtime
     /// </summary>
     public class Library
     {
-        private Dictionary<string, object> _properties = new Dictionary<string, object>();
-
         public Library(string name)
             : this(name, string.Empty, string.Empty, string.Empty, Enumerable.Empty<string>(), Enumerable.Empty<AssemblyName>())
         {
@@ -63,36 +61,5 @@ namespace Microsoft.Dnx.Runtime
         /// Gets a list of assembly names from the library that can be loaded. Packages can contain multiple assemblies.
         /// </summary>
         public IEnumerable<AssemblyName> Assemblies { get; }
-
-        /// <summary>
-        /// Gets or sets a property in the Library's property bag.
-        /// </summary>
-        /// <param name="name">The name of the property to set</param>
-        /// <returns>The value of the property</returns>
-        public object this[string name]
-        {
-            get { return _properties[name]; }
-            set { _properties[name] = value; }
-        }
-
-        /// <summary>
-        /// Retrieves a property from the Library's property bag.
-        /// </summary>
-        /// <remarks>
-        /// Well-known property keys can be found in static members on <see cref="LibraryProperties"/>. These
-        /// properties are generally only used for library exporting and loading.
-        /// </remarks>
-        /// <typeparam name="T">The type of the property value.</typeparam>
-        /// <param name="name">The name of the property.</param>
-        /// <returns>The value of the property, or the default value for <see cref="T"/> if the property does not exist.</returns>
-        public T GetProperty<T>(string name) where T : class
-        {
-            object val;
-            if(!_properties.TryGetValue(name, out val))
-            {
-                return default(T);
-            }
-            return (T)val;
-        }
     }
 }
