@@ -37,7 +37,7 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryDescription GetDescription(LibraryRange libraryRange, FrameworkName targetFramework)
         {
-            if (libraryRange.IsGacOrFrameworkReference)
+            if (!libraryRange.AllowsType(LibraryTypes.Package))
             {
                 return null;
             }
@@ -85,7 +85,7 @@ namespace Microsoft.Dnx.Runtime
             {
                 yield return new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange(d.Id, frameworkReference: false)
+                    LibraryRange = new LibraryRange(d.Id)
                     {
                         VersionRange = d.VersionSpec == null ? null : new SemanticVersionRange(d.VersionSpec)
                     }
@@ -96,7 +96,7 @@ namespace Microsoft.Dnx.Runtime
             {
                 yield return new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange(frameworkAssembly, frameworkReference: true)
+                    LibraryRange = new LibraryRange(frameworkAssembly, allowedTypes: LibraryTypes.Sets.GacOrFrameworkReference)
                 };
             }
         }
@@ -158,7 +158,7 @@ namespace Microsoft.Dnx.Runtime
         {
             foreach (var library in libraryManager.GetLibraryDescriptions())
             {
-                if (library.Type == LibraryTypes.Package)
+                if (library.Identity.IsType(LibraryTypes.Package))
                 {
                     var packageDescription = (PackageDescription)library;
 

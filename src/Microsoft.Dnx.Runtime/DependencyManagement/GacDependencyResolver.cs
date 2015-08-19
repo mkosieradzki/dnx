@@ -29,7 +29,7 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryDescription GetDescription(LibraryRange libraryRange, FrameworkName targetFramework)
         {
-            if (!libraryRange.IsGacOrFrameworkReference)
+            if (!libraryRange.AllowsType(LibraryTypes.GlobalAssemblyCache))
             {
                 return null;
             }
@@ -48,18 +48,17 @@ namespace Microsoft.Dnx.Runtime
             var version = libraryRange.VersionRange?.MinVersion;
 
             string path;
-            if (!TryResolvePartialName(libraryRange.GetReferenceAssemblyName(), version, out path))
+            if (!TryResolvePartialName(libraryRange.Name, version, out path))
             {
                 return null;
             }
 
             return new LibraryDescription(
                 libraryRange,
-                new LibraryIdentity(name, version, isGacOrFrameworkReference: true),
+                new LibraryIdentity(name, version, type: LibraryTypes.GlobalAssemblyCache),
                 path,
-                LibraryTypes.GlobalAssemblyCache,
                 Enumerable.Empty<LibraryDependency>(),
-                new[] { libraryRange.GetReferenceAssemblyName() },
+                new[] { libraryRange.Name },
                 framework: null);
         }
 

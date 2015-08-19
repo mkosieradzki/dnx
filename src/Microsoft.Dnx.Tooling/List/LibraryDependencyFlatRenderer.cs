@@ -29,7 +29,7 @@ namespace Microsoft.Dnx.Tooling.List
             var libraries = dict.Keys.OrderBy(description => description.Identity.Name);
             var results = new List<string>();
 
-            var gacOrFrameworkReferences = libraries.Where(library => library.Identity.IsGacOrFrameworkReference);
+            var gacOrFrameworkReferences = libraries.Where(library => library.Identity.IsType(LibraryTypes.Sets.GacOrFrameworkReference));
 
             if (gacOrFrameworkReferences.Any())
             {
@@ -38,8 +38,8 @@ namespace Microsoft.Dnx.Tooling.List
                 results.Add(string.Empty);
             }
 
-            var otherReferences = libraries.Where(library => !library.Identity.IsGacOrFrameworkReference);
-            var referencesGroups = otherReferences.GroupBy(reference => reference.Type);
+            var otherReferences = libraries.Where(library => !library.Identity.IsType(LibraryTypes.Sets.GacOrFrameworkReference));
+            var referencesGroups = otherReferences.GroupBy(reference => reference.Identity.Type);
             foreach (var group in referencesGroups)
             {
                 results.Add(string.Format("{0} references:", group.Key));
@@ -107,7 +107,7 @@ namespace Microsoft.Dnx.Tooling.List
 
                 if (_showDetails)
                 {
-                    var dependenciesInGroup = dependenciesMap[description].GroupBy(dep => dep.Type);
+                    var dependenciesInGroup = dependenciesMap[description].GroupBy(dep => dep.Identity.Type);
                     foreach (var group in dependenciesInGroup)
                     {
                         results.Add(string.Format("    by {0}: {1}", group.Key, string.Join(", ", group.Select(desc => desc.Identity.ToString()).OrderBy(name => name))));

@@ -23,7 +23,7 @@ namespace Microsoft.Dnx.Tooling.Publish
 
         public async Task Emit(PublishRoot root)
         {
-            root.Reports.Quiet.WriteLine("Using {0} dependency {1}", _package.Type, Library);
+            root.Reports.Quiet.WriteLine("Using {0} dependency {1}", _package.Identity.Type, Library.Name);
 
             var srcPackagePathResolver = new DefaultPackagePathResolver(root.SourcePackagesPath);
             var targetPackagePathResolver = new DefaultPackagePathResolver(root.TargetPackagesPath);

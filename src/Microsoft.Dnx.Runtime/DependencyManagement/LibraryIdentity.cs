@@ -2,28 +2,29 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using NuGet;
 
 namespace Microsoft.Dnx.Runtime
 {
     public class LibraryIdentity : IEquatable<LibraryIdentity>
     {
-        public LibraryIdentity(string name, SemanticVersion version, bool isGacOrFrameworkReference)
+        public LibraryIdentity(string name, SemanticVersion version, string type)
         {
             Name = name;
             Version = version;
-            IsGacOrFrameworkReference = isGacOrFrameworkReference;
+            Type = type;
         }
 
         public string Name { get; }
 
         public SemanticVersion Version { get; }
 
-        public bool IsGacOrFrameworkReference { get; }
+        public string Type { get; }
 
         public override string ToString()
         {
-            // NOTE(anurse): We no longer need to put IsGacOrFrameworkReference into the string output because we rename framework dependencies.
             return Name + " " + Version?.ToString();
         }
 
@@ -33,7 +34,7 @@ namespace Microsoft.Dnx.Runtime
             if (ReferenceEquals(this, other)) return true;
             return string.Equals(Name, other.Name) &&
                 Equals(Version, other.Version) &&
-                Equals(IsGacOrFrameworkReference, other.IsGacOrFrameworkReference);
+                string.Equals(Type, other.Type);
         }
 
         public override bool Equals(object obj)
@@ -50,7 +51,7 @@ namespace Microsoft.Dnx.Runtime
             {
                 return ((Name != null ? Name.GetHashCode() : 0) * 397) ^
                     (Version != null ? Version.GetHashCode() : 0) ^
-                    (IsGacOrFrameworkReference.GetHashCode());
+                    (Type.GetHashCode());
             }
         }
 
@@ -66,7 +67,7 @@ namespace Microsoft.Dnx.Runtime
 
         public static implicit operator LibraryRange(LibraryIdentity library)
         {
-            return new LibraryRange(library.Name, library.IsGacOrFrameworkReference)
+            return new LibraryRange(library.Name, new[] { library.Type })
             {
                 VersionRange = library.Version == null ? null : new SemanticVersionRange
                 {
@@ -78,7 +79,17 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryIdentity ChangeName(string name)
         {
-            return new LibraryIdentity(name, Version, IsGacOrFrameworkReference);
+            return new LibraryIdentity(name, Version, Type);
+        }
+
+        public bool IsType(string type)
+        {
+            return string.Equals(Type, type, StringComparison.Ordinal);
+        }
+
+        public bool IsType(IEnumerable<string> types)
+        {
+            return types.Any(t => IsType(t));
         }
     }
 }

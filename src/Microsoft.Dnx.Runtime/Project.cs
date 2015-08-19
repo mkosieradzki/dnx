@@ -393,9 +393,11 @@ namespace Microsoft.Dnx.Runtime
                         }
                     }
 
+                    var allowedTypes = isGacOrFrameworkReference ? LibraryTypes.Sets.GacOrFrameworkReference : Enumerable.Empty<string>();
+
                     results.Add(new LibraryDependency
                     {
-                        LibraryRange = new LibraryRange(dependencyKey, isGacOrFrameworkReference)
+                        LibraryRange = new LibraryRange(dependencyKey, allowedTypes)
                         {
                             VersionRange = dependencyVersionRange,
                             FileName = projectPath,

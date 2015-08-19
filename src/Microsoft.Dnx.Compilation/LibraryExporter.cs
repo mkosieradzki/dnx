@@ -59,7 +59,7 @@ namespace Microsoft.Dnx.Compilation
             return GetAllExports(
                 name,
                 aspect: null,
-                libraryFilter: l => l.Type != LibraryTypes.Project);
+                libraryFilter: l => !l.Identity.IsType(LibraryTypes.Project));
         }
 
         public LibraryExport GetAllDependencies(
@@ -180,11 +180,11 @@ namespace Microsoft.Dnx.Compilation
                 return null;
             }
 
-            if (string.Equals(LibraryTypes.Package, library.Type, StringComparison.Ordinal))
+            if (library.Identity.IsType(LibraryTypes.Package))
             {
                 return ExportPackage((PackageDescription)library);
             }
-            else if (string.Equals(LibraryTypes.Project, library.Type, StringComparison.Ordinal))
+            else if (library.Identity.IsType(LibraryTypes.Project))
             {
                 return ExportProject((ProjectDescription)library, aspect);
             }

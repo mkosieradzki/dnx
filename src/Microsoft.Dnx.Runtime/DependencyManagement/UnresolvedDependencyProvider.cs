@@ -13,9 +13,8 @@ namespace Microsoft.Dnx.Runtime
         {
             return new LibraryDescription(
                 libraryRange,
-                new LibraryIdentity(libraryRange.Name, libraryRange.VersionRange?.MinVersion, libraryRange.IsGacOrFrameworkReference),
+                new LibraryIdentity(libraryRange.Name, libraryRange.VersionRange?.MinVersion, LibraryTypes.Unresolved),
                 path: null,
-                type: LibraryTypes.Unresolved,
                 dependencies: Enumerable.Empty<LibraryDependency>(),
                 assemblies: Enumerable.Empty<string>(),
                 framework: null)

@@ -17,7 +17,6 @@ namespace Microsoft.Dnx.Runtime
             LibraryRange requestedRange,
             LibraryIdentity identity,
             string path,
-            string type, 
             IEnumerable<LibraryDependency> dependencies, 
             IEnumerable<string> assemblies,
             FrameworkName framework)
@@ -25,7 +24,6 @@ namespace Microsoft.Dnx.Runtime
             Path = path;
             RequestedRange = requestedRange;
             Identity = identity;
-            Type = type;
             Dependencies = dependencies ?? Enumerable.Empty<LibraryDependency>();
             Assemblies = assemblies ?? Enumerable.Empty<string>();
             Framework = framework;
@@ -34,7 +32,6 @@ namespace Microsoft.Dnx.Runtime
         public LibraryRange RequestedRange { get; }
         public LibraryIdentity Identity { get; }
 
-        public string Type { get; }
         public FrameworkName Framework { get; set; }
 
         public string Path { get; set; }
@@ -49,7 +46,7 @@ namespace Microsoft.Dnx.Runtime
                 Identity.Name,
                 Identity.Version?.GetNormalizedVersionString(),
                 Path,
-                Type,
+                Identity.Type,
                 Dependencies.Select(d => d.Name),
                 Assemblies.Select(a => new AssemblyName(a)));
         }

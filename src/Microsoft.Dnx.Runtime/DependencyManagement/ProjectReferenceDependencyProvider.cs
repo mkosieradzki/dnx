@@ -25,7 +25,7 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryDescription GetDescription(LibraryRange libraryRange, FrameworkName targetFramework)
         {
-            if (libraryRange.IsGacOrFrameworkReference)
+            if (!libraryRange.AllowsType(LibraryTypes.Project))
             {
                 return null;
             }
@@ -48,22 +48,22 @@ namespace Microsoft.Dnx.Runtime
             {
                 targetFrameworkDependencies.Add(new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange("mscorlib", frameworkReference: true)
+                    LibraryRange = new LibraryRange("mscorlib", allowedTypes: LibraryTypes.Sets.GacOrFrameworkReference)
                 });
 
                 targetFrameworkDependencies.Add(new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange("System", frameworkReference: true)
+                    LibraryRange = new LibraryRange("System", allowedTypes: LibraryTypes.Sets.GacOrFrameworkReference)
                 });
 
                 targetFrameworkDependencies.Add(new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange("System.Core", frameworkReference: true)
+                    LibraryRange = new LibraryRange("System.Core", allowedTypes: LibraryTypes.Sets.GacOrFrameworkReference)
                 });
 
                 targetFrameworkDependencies.Add(new LibraryDependency
                 {
-                    LibraryRange = new LibraryRange("Microsoft.CSharp", frameworkReference: true)
+                    LibraryRange = new LibraryRange("Microsoft.CSharp", allowedTypes: LibraryTypes.Sets.GacOrFrameworkReference)
                 });
             }
 

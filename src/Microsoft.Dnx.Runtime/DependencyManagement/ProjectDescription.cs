@@ -14,9 +14,8 @@ namespace Microsoft.Dnx.Runtime
             bool resolved) :
                 base(
                     libraryRange,
-                    new LibraryIdentity(project.Name, project.Version, isGacOrFrameworkReference: false),
+                    new LibraryIdentity(project.Name, project.Version, type: LibraryTypes.Project),
                     project.ProjectFilePath,
-                    LibraryTypes.Project,
                     dependencies,
                     assemblies,
                     targetFrameworkInfo.FrameworkName)

@@ -29,7 +29,7 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryDescription GetDescription(LibraryRange libraryRange, FrameworkName targetFramework)
         {
-            if (libraryRange.IsGacOrFrameworkReference)
+            if (!libraryRange.AllowsType(LibraryTypes.Package))
             {
                 return null;
             }

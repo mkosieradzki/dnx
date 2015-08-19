@@ -36,12 +36,12 @@ namespace Microsoft.Dnx.Runtime
 
         public LibraryDescription GetDescription(LibraryRange libraryRange, FrameworkName targetFramework)
         {
-            if (!libraryRange.IsGacOrFrameworkReference)
+            if (!libraryRange.AllowsType(LibraryTypes.ReferenceAssembly))
             {
                 return null;
             }
 
-            var name = libraryRange.GetReferenceAssemblyName();
+            var name = libraryRange.Name;
             var version = libraryRange.VersionRange?.MinVersion;
 
             string path;
@@ -56,9 +56,8 @@ namespace Microsoft.Dnx.Runtime
             {
                 return new LibraryDescription(
                     libraryRange,
-                    new LibraryIdentity(libraryRange.Name, new SemanticVersion(assemblyVersion), isGacOrFrameworkReference: true),
+                    new LibraryIdentity(libraryRange.Name, new SemanticVersion(assemblyVersion), type: LibraryTypes.ReferenceAssembly),
                     path,
-                    LibraryTypes.ReferenceAssembly,
                     Enumerable.Empty<LibraryDependency>(),
                     new[] { name },
                     framework: null);

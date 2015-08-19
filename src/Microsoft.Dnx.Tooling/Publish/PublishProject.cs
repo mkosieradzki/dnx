@@ -35,7 +35,7 @@ namespace Microsoft.Dnx.Tooling.Publish
 
         public bool Emit(PublishRoot root)
         {
-            root.Reports.Quiet.WriteLine("Using {0} dependency {1} for {2}", _projectDescription.Type,
+            root.Reports.Quiet.WriteLine("Using {0} dependency {1} for {2}", _projectDescription.Identity.Type,
                 _projectDescription.Identity, _projectDescription.Framework.ToString().Yellow().Bold());
 
             var success = true;
@@ -57,7 +57,7 @@ namespace Microsoft.Dnx.Tooling.Publish
         private void EmitSource(PublishRoot root)
         {
             root.Reports.Quiet.WriteLine("  Copying source code from {0} dependency {1}",
-                _projectDescription.Type, _projectDescription.Identity.Name);
+                _projectDescription.Identity.Type, _projectDescription.Identity.Name);
 
             var project = GetCurrentProject();
             var targetName = project.Name;
@@ -90,7 +90,7 @@ namespace Microsoft.Dnx.Tooling.Publish
         private bool EmitNupkg(PublishRoot root)
         {
             root.Reports.Quiet.WriteLine("  Packing nupkg from {0} dependency {1}",
-                _projectDescription.Type, _projectDescription.Identity.Name);
+                _projectDescription.Identity.Type, _projectDescription.Identity.Name);
 
             IsPackage = true;
 
@@ -637,7 +637,7 @@ namespace Microsoft.Dnx.Tooling.Publish
         private void CopyContentFiles(PublishRoot root, Runtime.Project project, string targetFolderPath)
         {
             root.Reports.Quiet.WriteLine("Copying contents of {0} dependency {1} to {2}",
-                _projectDescription.Type, _projectDescription.Identity.Name, targetFolderPath);
+                _projectDescription.Identity.Type, _projectDescription.Identity.Name, targetFolderPath);
 
             var contentSourcePath = GetWwwRootSourcePath(project.ProjectDirectory, WwwRoot);
 

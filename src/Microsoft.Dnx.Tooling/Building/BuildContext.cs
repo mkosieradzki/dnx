@@ -92,15 +92,15 @@ namespace Microsoft.Dnx.Tooling
                     continue;
                 }
 
-                if (dependencyDescription.Type == LibraryTypes.Project &&
+                if (dependencyDescription.Identity.IsType(LibraryTypes.Project) &&
                     ((ProjectDescription)dependencyDescription).Project.EmbedInteropTypes)
                 {
                     continue;
                 }
 
-                if (dependency.LibraryRange.IsGacOrFrameworkReference)
+                if (dependency.LibraryRange.AllowsType(LibraryTypes.GlobalAssemblyCache) || dependency.LibraryRange.AllowsType(LibraryTypes.ReferenceAssembly))
                 {
-                    packageBuilder.FrameworkReferences.Add(new FrameworkAssemblyReference(dependency.LibraryRange.GetReferenceAssemblyName(), new[] { _targetFramework }));
+                    packageBuilder.FrameworkReferences.Add(new FrameworkAssemblyReference(dependency.LibraryRange.Name, new[] { _targetFramework }));
                 }
                 else
                 {
@@ -167,10 +167,10 @@ namespace Microsoft.Dnx.Tooling
                     report.WriteLine();
                     continue;
                 }
-                report.WriteLine("  Using {0} dependency {1}", library.Type, library.Identity);
+                report.WriteLine("  Using dependency {0}", library.Identity);
                 report.WriteLine("    Source: {0}", HighlightFile(library.Path));
 
-                if (library.Type == LibraryTypes.Package)
+                if (library.Identity.IsType(LibraryTypes.Package))
                 {
                     // TODO: temporarily use prefix to tell whether an assembly belongs to a package
                     // Should expose LibraryName from IMetadataReference later for more efficient lookup

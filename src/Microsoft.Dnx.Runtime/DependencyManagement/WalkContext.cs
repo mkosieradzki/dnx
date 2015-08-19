@@ -22,7 +22,7 @@ namespace Microsoft.Dnx.Runtime
         {
             var root = new Node
             {
-                Key = new LibraryRange(name, frameworkReference: false)
+                Key = new LibraryRange(name)
                 {
                     VersionRange = new SemanticVersionRange(version)
                 }

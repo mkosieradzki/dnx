@@ -1115,7 +1115,7 @@ namespace Microsoft.Dnx.DesignTimeHost
                 // Watch all projects for project.json changes
                 foreach (var library in applicationHostContext.LibraryManager.GetLibraryDescriptions())
                 {
-                    if (string.Equals(library.Type, "Project"))
+                    if (library.Identity.IsType(LibraryTypes.Project))
                     {
                         ctx.Monitor(new FileWriteTimeCacheDependency(library.Path));
                     }
@@ -1159,7 +1159,7 @@ namespace Microsoft.Dnx.DesignTimeHost
                         continue;
                     }
 
-                    if (string.Equals(library.Type, LibraryTypes.Project) &&
+                    if (library.Identity.IsType(LibraryTypes.Project) &&
                        !string.Equals(library.Identity.Name, project.Name))
                     {
                         var referencedProject = (ProjectDescription)library;
@@ -1235,12 +1235,15 @@ namespace Microsoft.Dnx.DesignTimeHost
 
         private static DependencyDescription CreateDependencyDescription(LibraryDescription library)
         {
+            // NOTE(anurse): Temporary until https://github.com/aspnet/Tooling-Internal/issues/446 is fixed.
+            string name = library.Identity.IsType(LibraryTypes.ReferenceAssembly) ? ("fx/" + library.Identity.Name) : library.Identity.Name;
+
             return new DependencyDescription
             {
-                Name = library.Identity.Name,
-                DisplayName = library.Identity.IsGacOrFrameworkReference ? library.RequestedRange.GetReferenceAssemblyName() : library.Identity.Name,
+                Name = name,
+                DisplayName = library.Identity.Name,
                 Version = library.Identity.Version?.ToString(),
-                Type = library.Resolved ? library.Type : "Unresolved",
+                Type = library.Resolved ? library.Identity.Type : "Unresolved",
                 Path = library.Path,
                 Dependencies = library.Dependencies.Select(dependency => new DependencyItem
                 {

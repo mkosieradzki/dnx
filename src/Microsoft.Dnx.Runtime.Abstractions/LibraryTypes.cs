@@ -7,5 +7,10 @@
         public static readonly string ReferenceAssembly = "Assembly"; //Can't use 'nameof(ReferenceAssembly)' because of WTE compat for now. Logged with tooling.
         public static readonly string GlobalAssemblyCache = nameof(GlobalAssemblyCache);
         public static readonly string Unresolved = nameof(Unresolved);
+
+        public static class Sets
+        {
+            public static readonly string[] GacOrFrameworkReference = new[] { ReferenceAssembly, GlobalAssemblyCache };
+        }
     }
 }

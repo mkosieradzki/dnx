@@ -14,9 +14,8 @@ namespace Microsoft.Dnx.Runtime
             bool compatible)
             : base(
                   requestedRange,
-                  new LibraryIdentity(package.Name, package.Version, isGacOrFrameworkReference: false),
+                  new LibraryIdentity(package.Name, package.Version, type: LibraryTypes.Package),
                   path: null,
-                  type: LibraryTypes.Package,
                   dependencies: dependencies,
                   assemblies: Enumerable.Empty<string>(),
                   framework: null)

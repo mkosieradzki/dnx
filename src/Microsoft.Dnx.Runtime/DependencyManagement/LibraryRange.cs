@@ -1,19 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Text;
 
 namespace Microsoft.Dnx.Runtime
 {
     public class LibraryRange : IEquatable<LibraryRange>
     {
-        private string _frameworkAssemblyName;
-
-        public static readonly string FrameworkReferencePrefix = "fx/";
-
         public string Name { get; }
 
         public SemanticVersionRange VersionRange { get; set; }
 
-        public bool IsGacOrFrameworkReference { get; }
+        public IEnumerable<string> AllowedTypes { get; }
 
         // Information for the editor
         public string FileName { get; set; }
@@ -22,29 +21,21 @@ namespace Microsoft.Dnx.Runtime
 
         public int Column { get; set; }
 
-        public LibraryRange(string name, bool frameworkReference)
+        public LibraryRange(string name): this(name, allowedTypes: Enumerable.Empty<string>()) { }
+
+        public LibraryRange(string name, IEnumerable<string> allowedTypes)
         {
             Name = name;
 
-            if (frameworkReference)
-            {
-                if (Name.IndexOf(FrameworkReferencePrefix) == 0)
-                {
-                    _frameworkAssemblyName = Name.Substring(FrameworkReferencePrefix.Length);
-                }
-                else
-                {
-                    _frameworkAssemblyName = Name;
-                    Name = FrameworkReferencePrefix + Name;
-                }
-            }
-
-            IsGacOrFrameworkReference = frameworkReference;
+            AllowedTypes = new List<string>(allowedTypes);
         }
 
         public override string ToString()
         {
-            return Name + " " + (VersionRange?.ToString());
+            return 
+                (!AllowedTypes.Any() ? "*" : string.Join("||", AllowedTypes)) + "/" +
+                Name + " " + 
+                VersionRange?.ToString();
         }
 
         public bool Equals(LibraryRange other)
@@ -53,7 +44,13 @@ namespace Microsoft.Dnx.Runtime
             if (ReferenceEquals(this, other)) return true;
             return string.Equals(Name, other.Name) &&
                 Equals(VersionRange, other.VersionRange) &&
-                Equals(IsGacOrFrameworkReference, other.IsGacOrFrameworkReference);
+                Equals(AllowedTypes, other.AllowedTypes);
+        }
+
+        public bool AllowsType(string type)
+        {
+            // The range must be either unconstrained or have the specified type as an allowed type
+            return !AllowedTypes.Any() || AllowedTypes.Contains(type, StringComparer.Ordinal);
         }
 
         public override bool Equals(object obj)
@@ -70,17 +67,8 @@ namespace Microsoft.Dnx.Runtime
             {
                 return ((Name != null ? Name.GetHashCode() : 0) * 397) ^
                     (VersionRange != null ? VersionRange.GetHashCode() : 0) ^
-                    (IsGacOrFrameworkReference.GetHashCode());
+                    (AllowedTypes.GetHashCode());
             }
-        }
-
-        public string GetReferenceAssemblyName()
-        {
-            // Assert some things that should NEVER be false.
-            Debug.Assert(
-                IsGacOrFrameworkReference && Name.StartsWith(FrameworkReferencePrefix) && _frameworkAssemblyName != null,
-                "This should only be called on Gac/Framework references");
-            return _frameworkAssemblyName;
         }
 
         public static bool operator ==(LibraryRange left, LibraryRange right)
@@ -91,15 +79,6 @@ namespace Microsoft.Dnx.Runtime
         public static bool operator !=(LibraryRange left, LibraryRange right)
         {
             return !Equals(left, right);
-        }
-
-        public static string GetAssemblyName(string libraryName)
-        {
-            if (libraryName.StartsWith(FrameworkReferencePrefix))
-            {
-                return libraryName.Substring(FrameworkReferencePrefix.Length);
-            }
-            return libraryName;
         }
     }
 }
