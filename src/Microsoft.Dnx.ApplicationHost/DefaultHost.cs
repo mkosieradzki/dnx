@@ -129,22 +129,16 @@ Please make sure the runtime matches a framework specified in {Project.ProjectFi
 
         private void Initialize(RuntimeOptions options, IServiceProvider hostServices, IAssemblyLoadContextAccessor loadContextAccessor, IFileWatcher fileWatcher)
         {
-            var applicationHostContext = new ApplicationHostContext
-            {
-                ProjectDirectory = _projectDirectory,
-                TargetFramework = _targetFramework
-            };
+            var runtimeHost = RuntimeHostBuilder.Build(_projectDirectory, _targetFramework);
 
-            ApplicationHostContext.Initialize(applicationHostContext);
-
-            Logger.TraceInformation("[{0}]: Project path: {1}", GetType().Name, applicationHostContext.ProjectDirectory);
-            Logger.TraceInformation("[{0}]: Project root: {1}", GetType().Name, applicationHostContext.RootDirectory);
+            Logger.TraceInformation("[{0}]: Project path: {1}", GetType().Name, runtimeHost.Project.ProjectDirectory);
+            Logger.TraceInformation("[{0}]: Project root: {1}", GetType().Name, runtimeHost.RootDirectory);
             Logger.TraceInformation("[{0}]: Project configuration: {1}", GetType().Name, options.Configuration);
-            Logger.TraceInformation("[{0}]: Packages path: {1}", GetType().Name, applicationHostContext.PackagesDirectory);
+            Logger.TraceInformation("[{0}]: Packages path: {1}", GetType().Name, runtimeHost.PackagesDirectory);
 
-            _libraryManager = applicationHostContext.LibraryManager;
+            _libraryManager = runtimeHost.LibraryManager;
 
-            _project = applicationHostContext.Project;
+            _project = runtimeHost.Project;
 
             if (options.WatchFiles)
             {

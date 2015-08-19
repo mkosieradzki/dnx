@@ -15,17 +15,11 @@ namespace Microsoft.Dnx.Tooling.Publish
     {
         public DependencyContext(Runtime.Project project, FrameworkName targetFramework)
         {
-            var applicationHostContext = new ApplicationHostContext
-            {
-                Project = project,
-                TargetFramework = targetFramework
-            };
-
-            ApplicationHostContext.Initialize(applicationHostContext);
+            var runtimeHost = RuntimeHostBuilder.Build(project, targetFramework);
 
             FrameworkName = targetFramework;
-            LibraryManager = applicationHostContext.LibraryManager;
-            PackagesDirectory = applicationHostContext.PackagesDirectory;
+            LibraryManager = runtimeHost.LibraryManager;
+            PackagesDirectory = runtimeHost.PackagesDirectory;
         }
 
         public LibraryManager LibraryManager { get; set; }

@@ -1096,24 +1096,20 @@ namespace Microsoft.Dnx.DesignTimeHost
             return state;
         }
 
-        private ApplicationHostContext GetApplicationHostContext(Project project, FrameworkName frameworkName)
+        private RuntimeHost GetApplicationHostContext(Project project, FrameworkName frameworkName)
         {
             var cacheKey = Tuple.Create("ApplicationContext", project.Name, frameworkName);
 
-            return _compilationEngine.CompilationCache.Cache.Get<ApplicationHostContext>(cacheKey, ctx =>
+            return _compilationEngine.CompilationCache.Cache.Get<RuntimeHost>(cacheKey, ctx =>
             {
-                var applicationHostContext = new ApplicationHostContext
-                {
-                    Project = project,
-                    TargetFramework = frameworkName,
-                    FrameworkResolver = _frameworkResolver,
-                    SkipLockfileValidation = true
-                };
-
-                ApplicationHostContext.Initialize(applicationHostContext);
+                var runtimeHost = RuntimeHostBuilder.Build(
+                    project, 
+                    frameworkName, 
+                    _frameworkResolver, 
+                    skipLockFileValidation: true);
 
                 // Watch all projects for project.json changes
-                foreach (var library in applicationHostContext.LibraryManager.GetLibraryDescriptions())
+                foreach (var library in runtimeHost.LibraryManager.GetLibraryDescriptions())
                 {
                     if (string.Equals(library.Type, "Project"))
                     {
@@ -1124,7 +1120,7 @@ namespace Microsoft.Dnx.DesignTimeHost
                 // Add a cache dependency on restore complete to reevaluate dependencies
                 ctx.Monitor(_compilationEngine.CompilationCache.NamedCacheDependencyProvider.GetNamedDependency(project.Name + "_Dependencies"));
 
-                return applicationHostContext;
+                return runtimeHost;
             });
         }
 
@@ -1329,7 +1325,7 @@ namespace Microsoft.Dnx.DesignTimeHost
 
         private class DependencyInfo
         {
-            public ApplicationHostContext HostContext { get; set; }
+            public RuntimeHost HostContext { get; set; }
 
             public IDictionary<string, byte[]> RawReferences { get; set; }
 

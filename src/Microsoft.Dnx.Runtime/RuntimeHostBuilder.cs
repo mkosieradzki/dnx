@@ -1,14 +1,13 @@
-// Copyright (c) .NET Foundation. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
-
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Versioning;
-using NuGet;
+using System.Threading.Tasks;
 
 namespace Microsoft.Dnx.Runtime
 {
-    public class ApplicationHostContext
+    public struct RuntimeHostBuilder
     {
         public Project Project { get; set; }
 
@@ -16,29 +15,21 @@ namespace Microsoft.Dnx.Runtime
 
         public string RootDirectory { get; set; }
 
-        public string ProjectDirectory { get; set; }
-
         public string PackagesDirectory { get; set; }
 
         public bool SkipLockfileValidation { get; set; }
 
         public FrameworkReferenceResolver FrameworkResolver { get; set; }
 
-        public LibraryManager LibraryManager { get; private set; }
-
-        public static void Initialize(ApplicationHostContext context)
+        public RuntimeHost Build()
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
+            // Initialize defaults
+            var rootDirectory = RootDirectory ?? ProjectResolver.ResolveRootDirectory(Project.ProjectDirectory);
+            var packagesDirectory = PackagesDirectory ?? PackageDependencyProvider.ResolveRepositoryPath(rootDirectory);
+            var frameworkReferenceResolver = FrameworkResolver ?? new FrameworkReferenceResolver();
 
-            context.ProjectDirectory = context.Project?.ProjectDirectory ?? context.ProjectDirectory;
-            context.RootDirectory = context.RootDirectory ?? ProjectResolver.ResolveRootDirectory(context.ProjectDirectory);
-            var projectResolver = new ProjectResolver(context.ProjectDirectory, context.RootDirectory);
-            var frameworkReferenceResolver = context.FrameworkResolver ?? new FrameworkReferenceResolver();
-            context.PackagesDirectory = context.PackagesDirectory ?? PackageDependencyProvider.ResolveRepositoryPath(context.RootDirectory);
-
+            // Create support objects
+            var projectResolver = new ProjectResolver(Project.ProjectDirectory, rootDirectory);
             var referenceAssemblyDependencyResolver = new ReferenceAssemblyDependencyResolver(frameworkReferenceResolver);
             var gacDependencyResolver = new GacDependencyResolver();
             var projectDependencyProvider = new ProjectReferenceDependencyProvider(projectResolver);
@@ -47,40 +38,27 @@ namespace Microsoft.Dnx.Runtime
             DependencyWalker dependencyWalker = null;
             LockFileLookup lockFileLookup = null;
 
-            if (context.Project == null)
-            {
-                Project project;
-                if (Project.TryGetProject(context.ProjectDirectory, out project))
-                {
-                    context.Project = project;
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Unable to resolve project from {context.ProjectDirectory}");
-                }
-            }
-
-            var projectLockJsonPath = Path.Combine(context.ProjectDirectory, LockFileReader.LockFileName);
+            var projectLockJsonPath = Path.Combine(Project.ProjectDirectory, LockFileReader.LockFileName);
             var lockFileExists = File.Exists(projectLockJsonPath);
             var validLockFile = false;
-            var skipLockFileValidation = context.SkipLockfileValidation;
+            var skipLockFileValidation = SkipLockfileValidation;
             string lockFileValidationMessage = null;
 
             if (lockFileExists)
             {
                 var lockFileReader = new LockFileReader();
                 var lockFile = lockFileReader.Read(projectLockJsonPath);
-                validLockFile = lockFile.IsValidForProject(context.Project, out lockFileValidationMessage);
+                validLockFile = lockFile.IsValidForProject(Project, out lockFileValidationMessage);
 
                 // When the only invalid part of a lock file is version number,
                 // we shouldn't skip lock file validation because we want to leave all dependencies unresolved, so that
                 // VS can be aware of this version mismatch error and automatically do restore
-                skipLockFileValidation = context.SkipLockfileValidation && (lockFile.Version == Constants.LockFileVersion);
+                skipLockFileValidation &= lockFile.Version == Constants.LockFileVersion;
 
                 if (validLockFile || skipLockFileValidation)
                 {
                     lockFileLookup = new LockFileLookup(lockFile);
-                    var packageDependencyProvider = new PackageDependencyProvider(context.PackagesDirectory, lockFileLookup);
+                    var packageDependencyProvider = new PackageDependencyProvider(PackagesDirectory, lockFileLookup);
 
                     dependencyWalker = new DependencyWalker(new IDependencyProvider[] {
                         projectDependencyProvider,
@@ -104,30 +82,64 @@ namespace Microsoft.Dnx.Runtime
                 });
             }
 
-            dependencyWalker.Walk(context.Project.Name, context.Project.Version, context.TargetFramework);
+            dependencyWalker.Walk(Project.Name, Project.Version, TargetFramework);
 
-            context.LibraryManager = new LibraryManager(context.Project.ProjectFilePath, context.TargetFramework, dependencyWalker.Libraries);
+            var libraryManager = new LibraryManager(Project.ProjectFilePath, TargetFramework, dependencyWalker.Libraries);
 
             if (!validLockFile)
             {
-                context.LibraryManager.AddGlobalDiagnostics(new DiagnosticMessage(
+                libraryManager.AddGlobalDiagnostics(new DiagnosticMessage(
                     $"{lockFileValidationMessage}. Please run \"dnu restore\" to generate a new lock file.",
-                    Path.Combine(context.Project.ProjectDirectory, LockFileReader.LockFileName),
+                    Path.Combine(Project.ProjectDirectory, LockFileReader.LockFileName),
                     DiagnosticMessageSeverity.Error));
             }
 
             if (!lockFileExists)
             {
-                context.LibraryManager.AddGlobalDiagnostics(new DiagnosticMessage(
+                libraryManager.AddGlobalDiagnostics(new DiagnosticMessage(
                     $"The expected lock file doesn't exist. Please run \"dnu restore\" to generate a new lock file.",
-                    Path.Combine(context.Project.ProjectDirectory, LockFileReader.LockFileName),
+                    Path.Combine(Project.ProjectDirectory, LockFileReader.LockFileName),
                     DiagnosticMessageSeverity.Error));
             }
 
-            // Clear all the temporary memory aggressively here if we don't care about reuse
-            // e.g. runtime scenarios
-            lockFileLookup?.Clear();
-            projectResolver.Clear();
+            // Return the constructed runtime host
+            return new RuntimeHost(rootDirectory, packagesDirectory, Project, libraryManager);
+        }
+
+        public static RuntimeHost Build(string projectDirectory, FrameworkName targetFramework)
+        {
+            // Load the project out of the specified directory
+            Project project;
+            if (!Project.TryGetProject(projectDirectory, out project))
+            {
+                throw new InvalidOperationException($"Unable to resolve project from {projectDirectory}");
+            }
+
+            return new RuntimeHostBuilder()
+            {
+                Project = project,
+                TargetFramework = targetFramework
+            }.Build();
+        }
+
+        public static RuntimeHost Build(Project project, FrameworkName targetFramework)
+        {
+            return new RuntimeHostBuilder()
+            {
+                Project = project,
+                TargetFramework = targetFramework
+            }.Build();
+        }
+
+        public static RuntimeHost Build(Project project, FrameworkName targetFramework, FrameworkReferenceResolver frameworkReferenceResolver, bool skipLockFileValidation)
+        {
+            return new RuntimeHostBuilder()
+            {
+                Project = project,
+                TargetFramework = targetFramework,
+                FrameworkResolver = frameworkReferenceResolver,
+                SkipLockfileValidation = skipLockFileValidation
+            }.Build();
         }
     }
 }

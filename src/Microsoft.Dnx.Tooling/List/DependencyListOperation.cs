@@ -67,15 +67,9 @@ namespace Microsoft.Dnx.Tooling.List
 
         private LibraryManager CreateLibraryManager()
         {
-            var hostContext = new ApplicationHostContext
-            {
-                Project = _options.Project,
-                TargetFramework = _framework
-            };
+            var runtimeHost = RuntimeHostBuilder.Build(_options.Project, _framework);
 
-            ApplicationHostContext.Initialize(hostContext);
-
-            return hostContext.LibraryManager;
+            return runtimeHost.LibraryManager;
         }
     }
 }
