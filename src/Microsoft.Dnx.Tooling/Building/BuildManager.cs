@@ -311,6 +311,37 @@ namespace Microsoft.Dnx.Tooling
                 var matcher = new Matcher();
                 matcher.AddIncludePatterns(pair.Value);
                 var results = matcher.Execute(rootDirectory);
+                var files = results.Files.ToList();
+
+                // Check the arity of the left
+                if(pair.Key.EndsWith("/"))
+                {
+                    var dir = pair.Key.Substring(0, pair.Key.Length - 1).Replace('/', Path.DirectorySeparatorChar);
+
+                    foreach(var file in files)
+                    {
+                        packageBuilder.Files.Add(new PhysicalPackageFile()
+                        {
+                            SourcePath = file.Path.Replace('/', Path.DirectorySeparatorChar),
+                            TargetPath = Path.Combine(dir, file.Stem.Replace('/', Path.DirectorySeparatorChar))
+                        });
+                    }
+                }
+                else
+                {
+                    // It's a file. If the glob matched multiple things, we're sad :(
+                    if(files.Count > 1)
+                    {
+                        // Arity mismatch!
+                        throw new Exception("BARF! Arity Mismatch");
+                    }
+
+                    packageBuilder.Files.Add(new PhysicalPackageFile()
+                    {
+                        SourcePath = files.Single().Path,
+                        TargetPath = pair.Key.Replace('/', Path.DirectorySeparatorChar)
+                    });
+                }
             }
         }
 
