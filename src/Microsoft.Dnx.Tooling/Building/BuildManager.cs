@@ -235,6 +235,11 @@ namespace Microsoft.Dnx.Tooling
 
                         var root = _currentProject.ProjectDirectory;
 
+                        if(_currentProject.PackageFiles != null && _currentProject.PackageFiles.Any())
+                        {
+                            AddPackageFiles(_currentProject.ProjectDirectory, _currentProject.PackageFiles, packageBuilder);
+                        }
+
                         foreach (var path in _currentProject.Files.SourceFiles)
                         {
                             var srcFile = new PhysicalPackageFile();
@@ -294,6 +299,19 @@ namespace Microsoft.Dnx.Tooling
 
             _buildOptions.Reports.Information.WriteLine("Time elapsed {0}", sw.Elapsed);
             return success;
+        }
+
+        private void AddPackageFiles(string projectDirectory, IEnumerable<KeyValuePair<string, string[]>> packageFiles, PackageBuilder packageBuilder)
+        {
+            var rootDirectory = new DirectoryInfoWrapper(new DirectoryInfo(projectDirectory));
+
+            foreach(var pair in packageFiles)
+            {
+                // Evaluate the globs on the right
+                var matcher = new Matcher();
+                matcher.AddIncludePatterns(pair.Value);
+                var results = matcher.Execute(rootDirectory);
+            }
         }
 
         private string GetScriptVariable(string key)

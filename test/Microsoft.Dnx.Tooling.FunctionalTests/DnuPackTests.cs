@@ -88,7 +88,7 @@ public class TestClass : BaseClass {
             const string projectJson = @"{
     ""version"": ""1.0.0"",
     ""frameworks"": { ""dnx451"": {} },
-    ""packInclude"": {
+    ""packageFiles"": {
         ""tools"": ""theTools/**/*.ps1""
     }   
 }";

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -92,6 +93,8 @@ namespace Microsoft.Dnx.Runtime
         public bool IsLoadable { get; set; }
 
         public ProjectFilesCollection Files { get; private set; }
+
+        public IReadOnlyDictionary<string, string[]> PackageFiles { get; private set; }
 
         public IDictionary<string, string> Commands { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -238,6 +241,25 @@ namespace Microsoft.Dnx.Runtime
                                                        project.ProjectDirectory,
                                                        project.ProjectFilePath,
                                                        diagnostics);
+
+            // Files to be packed along with the project
+            var packageFiles = rawProject.ValueAsJsonObject("packageFiles");
+            if (packageFiles != null)
+            {
+                project.PackageFiles = new ReadOnlyDictionary<string, string[]>(
+                    packageFiles.Keys.ToDictionary(
+                        k => k,
+                        k =>
+                        {
+                            var valueAsString = packageFiles.ValueAsString(k);
+                            if (valueAsString != null)
+                            {
+                                return new string[] { valueAsString };
+                            }
+                            return packageFiles.ValueAsStringArray(k);
+                        }));
+            }
+
 
             var compilerInfo = rawProject.ValueAsJsonObject("compiler");
             if (compilerInfo != null)
