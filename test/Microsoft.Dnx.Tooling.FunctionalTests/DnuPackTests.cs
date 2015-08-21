@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using Microsoft.Dnx.CommonTestUtils;
 using Xunit;
@@ -70,6 +71,55 @@ public class TestClass : BaseClass {
                 var exitCode = DnuTestUtils.ExecDnu(runtimeHomeDir, "pack", "", out stdOut, out stdError, environment, p2);
                 Assert.Equal(0, exitCode);
             }
+        }
+        
+        [Theory]
+        [MemberData(nameof(RuntimeComponents))]
+        public void DnuPack_AdditionalFiles(string flavor, string os, string architecture)
+        {
+            const string dirTree = @"{
+    ""."": [""project.json""],
+    ""theTools"": {
+        ""."": [""install.ps1""],
+        ""sub"": [""support.ps1""]
+    }
+}";
+
+            const string projectJson = @"{
+    ""version"": ""1.0.0"",
+    ""frameworks"": { ""dnx451"": {} },
+    ""packInclude"": {
+        ""tools"": ""theTools/**/*.ps1""
+    }   
+}";
+
+            var runtimeHomeDir = TestUtils.GetRuntimeHomeDir(flavor, os, architecture);
+            string[] entries;
+            using(var testEnv = new DnuTestEnvironment(runtimeHomeDir))
+            {
+                DirTree.CreateFromJson(dirTree)
+                    .WithFileContents("project.json", projectJson)
+                    .WriteTo(testEnv.ProjectPath);
+
+                DnuTestUtils.ExecDnu(runtimeHomeDir, "restore", "", workingDir: testEnv.RootDir);
+                DnuTestUtils.ExecDnu(runtimeHomeDir, "pack", $"--out {testEnv.PublishOutputDirPath}", workingDir: testEnv.ProjectPath);
+
+                // Open the produced package
+                using (var archive = ZipFile.OpenRead(Path.Combine(testEnv.PublishOutputDirPath, "Debug", $"{testEnv.ProjectName}.1.0.0.nupkg")))
+                {
+                    entries = archive.Entries.Select(e => e.FullName).Where(IsNotOpcMetadata).ToArray();
+                }
+            }
+
+            // Check it
+            Assert.Equal(new[]
+            {
+                "ProjectName.nuspec",
+                "lib/dnx451/ProjectName.dll",
+                "lib/dnx451/ProjectName.xml",
+                "tools/install.ps1",
+                "tools/sub/support.ps1"
+            }, entries);
         }
 
         [Theory]
@@ -283,6 +333,17 @@ public class TestClass : BaseClass {
                     .Count();
                 Assert.Equal(1, unresolvedDependencyErrorCount);
             }
+        }
+
+        private static readonly HashSet<string> OpcMetadataPaths = new HashSet<string>()
+        {
+            "_rels/.rels",
+            "[Content_Types].xml"
+        };
+
+        private bool IsNotOpcMetadata(string arg)
+        {
+            return !OpcMetadataPaths.Contains(arg);
         }
     }
 }
